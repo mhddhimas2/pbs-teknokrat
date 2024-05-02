@@ -1,63 +1,128 @@
-const express = require('express')
-const app = express()
-const port = 3001
+const express = require('express');
+const app = express();
+const port = 3001;
+const bodyParser = require('body-parser');
+const mysql = require('mysql');
+const response = require('./request.js');
 
-// memanggil request body-parser
-const bodyParser = require('body-parser')
+app.use(bodyParser.json());
 
-const response = require('./request.js')
+// Membuat koneksi ke database
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root', // Ganti dengan username Anda
+    password: '', // Ganti dengan password Anda
+    database: 'db_perpustakaan' // Ganti dengan nama database Anda
+});
 
-// memanggik file config.js
-const db = require('./config.js')
+// Menghubungkan ke database
+db.connect((err) => {
+    if (err) {
+        throw err;
+    }
+    console.log('Terhubung ke database MySQL');
+});
 
-//menggunakan body-parser
-app.use(bodyParser.json())
-
-// route get data
-app.get('/mahasiswa', (req,res)=>{
-    const sql = 'SELECT * FROM tb_mahasiswa'
-    db.query(sql,(error, result)=>{
-        response(200,result,'data mahasiswa',res)
-    })
-})
-
-app.get('/mahasiswa/:npm', (req, res) => {
-    const npm = req.params.npm;
-    const sql = `SELECT * FROM tb_mahasiswa WHERE npm = '${npm}'`; // Menggunakan npm dari params
+// GET endpoint untuk mendapatkan data buku
+app.get('/buku', (req, res) => {
+    const sql = 'SELECT * FROM tb_buku';
     db.query(sql, (error, result) => {
         if (error) {
-            console.error('Error fetching data:', error);
-            response(500, 'error', 'Internal Server Error', res); // Tangani kesalahan query SQL
+            response(500, 'error', 'Gagal mengambil data buku dari database', res);
         } else {
-            if (result.length === 0) {
-                response(404, 'error', 'Data not found', res); // Tangani jika data tidak ditemukan
-            } else {
-                response(200, result, 'Get data mahasiswa', res); // Tangani jika data berhasil ditemukan
-            }
+            response(200, result, 'Data buku berhasil diambil dari database', res);
         }
     });
 });
 
-
-// route post data
-app.post('/mahasiswa', (req, res)=>{
-    const {nama, npm ,alamat }=req.body
-    const sql = `INSERT INTO tb_mahasiswa (nama, npm, alamat) values ('${nama}','${npm}','${alamat}');`
-
-    db.query(sql,(error, fields)=>{
-        if(error) response(500, 'invalid', `${nama} dengan npm ${npm} sudah di tambahkan`, res)
-        if (fields?.affectedRows){
-            const data={
-                isSucces: fields.affectedRows,
-                id:fields.insertId,
-            }
-            response(200,data,"Data nerhasil di simpan",res)
-            
+// GET endpoint untuk mendapatkan data penerbit
+app.get('/penerbit', (req, res) => {
+    const sql = 'SELECT * FROM tb_penerbit';
+    db.query(sql, (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal mengambil data penerbit dari database', res);
+        } else {
+            response(200, result, 'Data penerbit berhasil diambil dari database', res);
         }
-    })
-})
+    });
+});
 
+// GET endpoint untuk mendapatkan data anggota
+app.get('/anggota', (req, res) => {
+    const sql = 'SELECT * FROM tb_anggota';
+    db.query(sql, (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal mengambil data anggota dari database', res);
+        } else {
+            response(200, result, 'Data anggota berhasil diambil dari database', res);
+        }
+    });
+});
+
+// GET endpoint untuk mendapatkan data pinjaman
+app.get('/pinjaman', (req, res) => {
+    const sql = 'SELECT * FROM tb_pinjaman';
+    db.query(sql, (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal mengambil data pinjaman dari database', res);
+        } else {
+            response(200, result, 'Data pinjaman berhasil diambil dari database', res);
+        }
+    });
+});
+
+// POST endpoint untuk menambah data buku
+app.post('/buku', (req, res) => {
+    const { judul, pengarang, tahun_terbit, id_penerbit } = req.body;
+    const sql = `INSERT INTO tb_buku (judul, pengarang, tahun_terbit, id_penerbit) VALUES (?, ?, ?, ?)`;
+    db.query(sql, [judul, pengarang, tahun_terbit, id_penerbit], (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal menambahkan data buku ke database', res);
+        } else {
+            response(200, result, 'Data buku berhasil ditambahkan ke database', res);
+        }
+    });
+});
+
+// POST endpoint untuk menambah data penerbit
+app.post('/penerbit', (req, res) => {
+    const { nama_penerbit, lokasi } = req.body;
+    const sql = `INSERT INTO tb_penerbit (nama_penerbit, lokasi) VALUES (?, ?)`;
+    db.query(sql, [nama_penerbit, lokasi], (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal menambahkan data penerbit ke database', res);
+        } else {
+            response(200, result, 'Data penerbit berhasil ditambahkan ke database', res);
+        }
+    });
+});
+
+// POST endpoint untuk menambah data anggota
+app.post('/anggota', (req, res) => {
+    const { nama, alamat, email, telepon } = req.body;
+    const sql = `INSERT INTO tb_anggota (nama, alamat, email, telepon) VALUES (?, ?, ?, ?)`;
+    db.query(sql, [nama, alamat, email, telepon], (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal menambahkan data anggota ke database', res);
+        } else {
+            response(200, result, 'Data anggota berhasil ditambahkan ke database', res);
+        }
+    });
+});
+
+// POST endpoint untuk menambah data pinjaman
+app.post('/pinjaman', (req, res) => {
+    const { id_buku, id_anggota, tanggal_pinjam, tanggal_kembali } = req.body;
+    const sql = `INSERT INTO tb_pinjaman (id_buku, id_anggota, tanggal_pinjam, tanggal_kembali) VALUES (?, ?, ?, ?)`;
+    db.query(sql, [id_buku, id_anggota, tanggal_pinjam, tanggal_kembali], (error, result) => {
+        if (error) {
+            response(500, 'error', 'Gagal menambahkan data pinjaman ke database', res);
+        } else {
+            response(200, result, 'Data pinjaman berhasil ditambahkan ke database', res);
+        }
+    });
+});
 
 app.listen(port, () => {
-    console.log(`Runing in port ${port}`)
-})
+    console.log(`Running on port http://localhost:${port}`);
+});
