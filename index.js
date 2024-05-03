@@ -9,10 +9,10 @@ app.use(bodyParser.json());
 
 // Membuat koneksi ke database
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root', // Ganti dengan username Anda
-    password: '', // Ganti dengan password Anda
-    database: 'db_perpustakaan' // Ganti dengan nama database Anda
+    host: 'sql6.freesqldatabase.com',
+    user: 'sql6702732', 
+    password: '3ZfrDxtYD6', 
+    database: 'sql6702732' 
 });
 
 // Menghubungkan ke database
